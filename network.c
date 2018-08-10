@@ -2,9 +2,12 @@
 #include "error.h"
 #include <string.h>
 #include <sys/socket.h>
-#include	<sys/types.h>
+#include <sys/types.h>
 #include <arpa/inet.h>     //sockaddr_in
-#include	<netinet/in.h>	/* sockaddr_in{} and other Internet defns */
+#include <netinet/in.h>	/* sockaddr_in{} and other Internet defns */
+#include <stdio.h>
+
+char para[MAXLINE];
 
 int network_init(int type){
   int sockfd;
@@ -61,4 +64,19 @@ int ana_cmd(char *cmd){
   if( (strcmp(cmd, "quit")) == 0){
     return CMD_QUIT;
   }
+}
+
+//返回需要参数的命令的参数
+//如 cd ， get ， put
+char *get_para(char *buf, int n){
+  // return substr(buf, n, strlen(buf)-n+1);
+  int j=0;
+  for(int i=n; i<strlen(buf); i++)
+    para[j++] = buf[i];
+  para[j] = '\0';
+
+  // printf("buf = %s\n", buf);
+  // printf("para = %s\n", para);
+
+  return para;
 }

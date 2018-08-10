@@ -6,9 +6,11 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 int n;
 char buf[MAXLINE];
+char recv_path[MAXLINE] = "./recvftp";
 
 void init(){
   memset(buf, 0, sizeof(buf));
@@ -33,15 +35,86 @@ int ftp_get_ls(int sockfd){
   if(n < 0)
     return err("ftp_get_ls error\n");
 }
-int ftp_get_cd(int sockfd){
+int ftp_get_cd(int sockfd, char *cmd){
+
+  //cmd不是乱码
+  // printf("ftp_get_cd : %s\n", cmd);
+  // printf("sizeof(cmd) = %ld\n", sizeof(cmd));
+  //
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //strlen 写成 sizeof 导致传输过去少一个字节，查了好半天
+  if( (write(sockfd, cmd, strlen(cmd))) < 0)
+    return err("ftp_get_cd error\n");
+  return 1;
+}
+int ftp_get_put(int sockfd, char *cmd){
+  //上传文件
+  init();
+  char send[SENDFILESIZE];
+  int filefd;
+  int sendsize;
+  if( (filefd = open(get_para(cmd, 4), O_RDONLY)) == -1)
+    return err("ftp_get_put open error\n");
+
+  printf("open file success\n");
+
+  //告诉服务器准备接受数据
+  if( (write(sockfd, cmd, strlen(cmd))) < 0)
+    return err("ftp_get_put write error\n");
+
+  printf("ready to send file\n");
+
+  //准备传输数据
+  while( (sendsize = read(filefd, (send+4), (SENDFILESIZE-4))) > 0){
+
+    printf("sendsize = %d\n", sendsize);
+
+    memcpy(send, &sendsize, 4);
+    if( (write(sockfd, send, SENDFILESIZE)) < 0){
+      close(filefd);
+      return err("put file error\n");
+    }
+    memset(send, 0, sizeof(send));
+  }
   return 0;
 }
-int ftp_get_put(int sockfd){
-  return 0;
-}
-int ftp_get_get(int sockfd){
+int ftp_get_get(int sockfd, char *cmd){
+  init();
+  char *filename = get_para(cmd, 4);
+  char filepath[MAXLINE];
+  int filesize;
+  int filefd;
+
+  strcat(filepath, recv_path);
+  strcat(filepath, "/");
+  strcat(filepath, filename);
+
+  if( (filefd = open(filepath, O_WRONLY|O_CREAT|O_TRUNC, 0777)) < 0){
+    return err("ftp_get_get open file error\n");
+  }
+
+  if(write(sockfd, cmd, strlen(cmd)) < 0)
+    return err("ftp_get_get write error\n");
+  else{
+    while(read(sockfd, buf, SENDFILESIZE) > 0){
+      memcpy(&filesize, buf, 4);
+
+      printf("filesize = %d\n", filesize);
+
+      if( (write(filefd, buf+4, filesize)) < 0){
+        close(filefd);
+        return err("ftp_put_put write to file error\n");
+      }
+
+      //文件接收完毕
+      if(filesize < (SENDFILESIZE-4))
+        break;
+    }
+  }
+
   return 0;
 }
 int ftp_get_quit(int sockfd){
+  write(sockfd, "quit", sizeof("quit"));
   return 0;
 }

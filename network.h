@@ -18,3 +18,4 @@
 
 int network_init(int);
 int ana_cmd(char *);
+char *get_para(char *, int);

@@ -9,7 +9,7 @@
 int main(int argc, char const *argv[]) {
   int sockfd;
   char buf[MAXLINE];
-  int cmd, end;
+  int cmd, end = 0;
 
   if( (sockfd = network_init(IS_CLIENT)) == -1){
     perr("client network_init error\n");
@@ -23,6 +23,9 @@ int main(int argc, char const *argv[]) {
     memset(buf, 0, sizeof(buf));
     read(fileno(stdin), buf, MAXLINE);
     buf[strlen(buf)-1] = '\0';
+
+    printf("buf = %s\n", buf);
+
     cmd = ana_cmd(buf);
     switch (cmd) {
       case CMD_HELP:
@@ -30,19 +33,22 @@ int main(int argc, char const *argv[]) {
           perr("ftp_help error\n");
         break;
       case CMD_LS:
+
+        printf("this is case CMD_LS\n");
+
         if( (ftp_get_ls(sockfd)) == -1)
           perr("ftp_ls error\n");
         break;
       case CMD_CD:
-        if ( (ftp_get_cd(sockfd)) == -1)
+        if ( (ftp_get_cd(sockfd, buf)) == -1)
           perr("ftp_cd error\n");
         break;
       case CMD_PUT:
-        if( (ftp_get_put(sockfd)) == -1)
+        if( (ftp_get_put(sockfd, buf)) == -1)
           perr("ftp_put error\n");
         break;
       case CMD_GET:
-        if( (ftp_get_get(sockfd)) == -1)
+        if( (ftp_get_get(sockfd, buf)) == -1)
           perr("ftp_get error\n");
         break;
       case CMD_QUIT:

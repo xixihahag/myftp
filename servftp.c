@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 char re[MAXLINE];
 char current_path[MAXLINE] = "/home/a/Desktop/ftp";
@@ -28,10 +29,6 @@ void show_help(){
   strcat(re, "\tget--------------download file\n");
   strcat(re, "\tput--------------upload files\n");
   strcat(re, "\tquit-------------exit\n");
-  // sprintf(re, "\tcd path----------Go to the next directory\n");
-  // sprintf(re, "\tget--------------download file\n");
-  // sprintf(re, "\tput--------------upload files\n");
-  // sprintf(re, "\tquit-------------exit\n");
 }
 
 void init(){
@@ -66,15 +63,111 @@ int ftp_put_ls(int sockfd){
   }
 }
 
-int ftp_put_cd(int sockfd){
-  return 0;
+int ftp_put_cd(int sockfd, char *para){
+  char temp[MAXLINE];
+  if( (strcmp(para, ".")) == 0)
+    return 1;
+  else if( (strcmp(para, "..")) == 0){
+    memset(temp, 0, sizeof(temp));
+    int i = strlen(current_path)-1;
+    for(; i>=0; i--){
+      if(current_path[i] == '/')
+        break;
+    }
+    for(int j=0; j<i; j++)
+      temp[j] = current_path[j];
+
+    strcpy(current_path, temp);
+  }
+  else{
+    strcat(current_path, "/");
+    strcat(current_path, para);
+  }
+  printf("%s\n", current_path);
+
+  return 1;
 }
-int ftp_put_put(int sockfd){
-  return 0;
+int ftp_put_put(int sockfd, char *para){
+  //接收客户端传来的文件
+  init();
+  char filename[MAXLINE];
+  char filepath[MAXLINE];
+  int filefd;
+  int filesize;
+
+  for(int i=strlen(para)-1; i>=0; i--){
+    if(para[i] == '/'){
+      for(int j=0; i<strlen(para); j++)
+        filename[j] = para[++i];
+      break;
+    }
+  }
+
+  strcat(filepath, current_path);
+  strcat(filepath, "/");
+  strcat(filepath, filename);
+
+  // printf("para = %s\n", para);
+
+  //调用O_TRUNC 新上传文件会覆盖旧文件
+  if( (filefd = open(filepath, O_WRONLY|O_CREAT|O_TRUNC, 0777)) < 0){
+    return err("ftp_put_put open file error\n");
+  }
+  else{
+    printf("create file success\n");
+
+    while(read(sockfd, buf, SENDFILESIZE) > 0){
+      memcpy(&filesize, buf, 4);
+
+      printf("filesize = %d\n", filesize);
+
+      if( (write(filefd, buf+4, filesize)) < 0){
+        close(filefd);
+        return err("ftp_put_put write to file error\n");
+      }
+
+      //文件接收完毕
+      if(filesize < (SENDFILESIZE-4))
+        break;
+    }
+  }
+  close(filefd);
+  return 1;
 }
-int ftp_put_get(int sockfd){
+int ftp_put_get(int sockfd, char *para){
+  //向客户端传送文件
+  init();
+  char send[SENDFILESIZE];
+  int filefd;
+  int sendsize;
+  char filepath[MAXLINE];
+  strcat(filepath, current_path);
+  strcat(filepath, "/");
+  strcat(filepath, para);
+
+  printf("serverfilepath = %s\n", filepath);
+
+
+  if( (filefd = open(filepath, O_RDONLY)) == -1)
+    return err("ftp_put_get open error\n");
+
+  printf("open file success\n");
+
+  //准备传输数据
+  while( (sendsize = read(filefd, (send+4), (SENDFILESIZE-4))) > 0){
+
+    printf("sendsize = %d\n", sendsize);
+
+    memcpy(send, &sendsize, 4);
+    if( (write(sockfd, send, SENDFILESIZE)) < 0){
+      close(filefd);
+      return err("put file error\n");
+    }
+    memset(send, 0, sizeof(send));
+  }
   return 0;
 }
 int ftp_put_quit(int sockfd){
-  return 0;
+  printf("one people leave\n");
+  return 1;
 }
