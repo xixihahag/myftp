@@ -10,6 +10,8 @@
 
 char re[MAXLINE];
 char current_path[MAXLINE] = "/home/a/Desktop/ftp";
+//解决cd浏览任意文件的问题
+int indeep = 0;
 DIR *dp;
 struct dirent *entry;
 int n;
@@ -68,18 +70,22 @@ int ftp_put_cd(int sockfd, char *para){
   if( (strcmp(para, ".")) == 0)
     return 1;
   else if( (strcmp(para, "..")) == 0){
-    memset(temp, 0, sizeof(temp));
-    int i = strlen(current_path)-1;
-    for(; i>=0; i--){
-      if(current_path[i] == '/')
-        break;
-    }
-    for(int j=0; j<i; j++)
-      temp[j] = current_path[j];
+    if(indeep != 0){
+      indeep--;
+      memset(temp, 0, sizeof(temp));
+      int i = strlen(current_path)-1;
+      for(; i>=0; i--){
+        if(current_path[i] == '/')
+          break;
+      }
+      for(int j=0; j<i; j++)
+        temp[j] = current_path[j];
 
-    strcpy(current_path, temp);
+      strcpy(current_path, temp);
+    }
   }
   else{
+    indeep++;
     strcat(current_path, "/");
     strcat(current_path, para);
   }
