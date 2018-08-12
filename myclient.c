@@ -11,10 +11,8 @@ int main(int argc, char const *argv[]) {
   char buf[MAXLINE];
   int cmd, end = 0;
 
-  if( (sockfd = network_init(IS_CLIENT)) == -1){
-    perr("client network_init error\n");
+  if( (sockfd = network_init(IS_CLIENT)) == -1)
     exit(EXIT_FAILURE);
-  }
 
   for(;;){
     if(end == 1)
@@ -23,44 +21,30 @@ int main(int argc, char const *argv[]) {
     memset(buf, 0, sizeof(buf));
     read(fileno(stdin), buf, MAXLINE);
     buf[strlen(buf)-1] = '\0';
-
-    printf("buf = %s\n", buf);
-
     cmd = ana_cmd(buf);
     switch (cmd) {
       case CMD_HELP:
-        if( (ftp_get_help(sockfd)) == -1)
-          perr("ftp_help error\n");
+        ftp_get_help(sockfd);
         break;
       case CMD_LS:
-
-        printf("this is case CMD_LS\n");
-
-        if( (ftp_get_ls(sockfd)) == -1)
-          perr("ftp_ls error\n");
+        ftp_get_ls(sockfd);
         break;
       case CMD_CD:
-        if ( (ftp_get_cd(sockfd, buf)) == -1)
-          perr("ftp_cd error\n");
+        ftp_get_cd(sockfd, buf);
         break;
       case CMD_PUT:
-        if( (ftp_get_put(sockfd, buf)) == -1)
-          perr("ftp_put error\n");
+        ftp_get_put(sockfd, buf);
         break;
       case CMD_GET:
-        if( (ftp_get_get(sockfd, buf)) == -1)
-          perr("ftp_get error\n");
+        ftp_get_get(sockfd, buf);
         break;
       case CMD_QUIT:
-        // if( (ftp_get_quit(sockfd)) == -1)
-        //   perr("ftp_quit error\n");
         close(sockfd);
         end = 1;
         break;
       default: printf("cmd error please input again\n");
     }
   }
-  // printf("welcome next time\n");
 
   return 0;
 }

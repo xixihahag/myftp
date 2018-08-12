@@ -12,11 +12,9 @@ int main(int argc, char const *argv[]) {
   char cmd[CMD_SIZE];
   int result, n;
 
-  if( (sockfd = network_init(IS_SERVER)) == -1){
-    perr("network_init error\n");
+  if( (sockfd = network_init(IS_SERVER)) == -1)
     exit(EXIT_FAILURE);
-  }
-  // printf("network_init success\n");
+
   for(;;){
     if( (connfd = accept(sockfd, NULL, NULL)) == -1){
       perr("accept error\n");
@@ -30,41 +28,30 @@ int main(int argc, char const *argv[]) {
         break;
       }else if(n == 0){
         //客户端close关闭连接
-        printf("online people --\n");
+        printf("one people leave\n");
         break;
       }else{
         result = ana_cmd(cmd);
         switch(result){
           case CMD_HELP:
-            if( (ftp_put_help(connfd)) == -1)
-              perr("ftp_help error\n");
+            ftp_put_help(connfd);
             break;
           case CMD_LS:
-            if( (ftp_put_ls(connfd)) == -1)
-              perr("ftp_ls error\n");
+            ftp_put_ls(connfd);
             break;
           case CMD_CD:
-            if ( (ftp_put_cd(connfd, get_para(cmd, 3))) == -1)
-              perr("ftp_cd error\n");
+            ftp_put_cd(connfd, get_para(cmd, 3));
             break;
           case CMD_PUT:
-            if( (ftp_put_put(connfd, get_para(cmd, 4))) == -1)
-              perr("ftp_put error\n");
+            ftp_put_put(connfd, get_para(cmd, 4));
             break;
           case CMD_GET:
-            if( (ftp_put_get(connfd, get_para(cmd, 4))) == -1)
-              perr("ftp_get error\n");
+            ftp_put_get(connfd, get_para(cmd, 4));
             break;
-          // case CMD_QUIT:
-          //   if( (ftp_put_quit(connfd)) == -1)
-          //     perr("ftp_quit error\n");
-          //   break;
-          // default: printf("cmd error please input again\n");
         }
       }
     }
   }
-
 
   return 0;
 }

@@ -15,6 +15,13 @@ char recv_path[MAXLINE] = "./recvftp";
 void init(){
   memset(buf, 0, sizeof(buf));
 }
+
+// void wait_4_server_reply(int sockfd){
+//   init();
+//   read(sockfd, buf, MAXLINE);
+//   printf("%s\n", buf);
+// }
+
 //--------------------------------------------------
 //客户端请求函数
 int ftp_get_help(int sockfd){
@@ -35,20 +42,17 @@ int ftp_get_ls(int sockfd){
   if(n < 0)
     return err("ftp_get_ls error\n");
 }
-int ftp_get_cd(int sockfd, char *cmd){
 
-  //cmd不是乱码
-  // printf("ftp_get_cd : %s\n", cmd);
-  // printf("sizeof(cmd) = %ld\n", sizeof(cmd));
-  //
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+int ftp_get_cd(int sockfd, char *cmd){
   //strlen 写成 sizeof 导致传输过去少一个字节，查了好半天
   if( (write(sockfd, cmd, strlen(cmd))) < 0)
     return err("ftp_get_cd error\n");
   return 1;
 }
+
+//上传文件
 int ftp_get_put(int sockfd, char *cmd){
-  //上传文件
   init();
   char send[SENDFILESIZE];
   int filefd;
@@ -56,18 +60,18 @@ int ftp_get_put(int sockfd, char *cmd){
   if( (filefd = open(get_para(cmd, 4), O_RDONLY)) == -1)
     return err("ftp_get_put open error\n");
 
-  printf("open file success\n");
+  // printf("open file success\n");
 
   //告诉服务器准备接受数据
   if( (write(sockfd, cmd, strlen(cmd))) < 0)
     return err("ftp_get_put write error\n");
 
-  printf("ready to send file\n");
+  // printf("ready to send file\n");
 
   //准备传输数据
   while( (sendsize = read(filefd, (send+4), (SENDFILESIZE-4))) > 0){
 
-    printf("sendsize = %d\n", sendsize);
+    // printf("sendsize = %d\n", sendsize);
 
     memcpy(send, &sendsize, 4);
     if( (write(sockfd, send, SENDFILESIZE)) < 0){
@@ -76,8 +80,11 @@ int ftp_get_put(int sockfd, char *cmd){
     }
     memset(send, 0, sizeof(send));
   }
+  printf("upload file success\n");
   return 0;
 }
+
+
 int ftp_get_get(int sockfd, char *cmd){
   init();
   char *filename = get_para(cmd, 4);
@@ -111,9 +118,11 @@ int ftp_get_get(int sockfd, char *cmd){
         break;
     }
   }
-
+  printf("file received success\n");
   return 0;
 }
+
+
 int ftp_get_quit(int sockfd){
   write(sockfd, "quit", sizeof("quit"));
   return 0;

@@ -104,6 +104,7 @@ int ftp_put_cd(int sockfd, char *para){
 
   return 1;
 }
+
 int ftp_put_put(int sockfd, char *para){
   //接收客户端传来的文件
   init();
@@ -131,12 +132,12 @@ int ftp_put_put(int sockfd, char *para){
     return err("ftp_put_put open file error\n");
   }
   else{
-    printf("create file success\n");
+    // printf("create file success\n");
 
     while(read(sockfd, buf, SENDFILESIZE) > 0){
       memcpy(&filesize, buf, 4);
 
-      printf("filesize = %d\n", filesize);
+      // printf("filesize = %d\n", filesize);
 
       if( (write(filefd, buf+4, filesize)) < 0){
         close(filefd);
@@ -151,6 +152,7 @@ int ftp_put_put(int sockfd, char *para){
   close(filefd);
   return 1;
 }
+
 int ftp_put_get(int sockfd, char *para){
   //向客户端传送文件
   init();
@@ -162,18 +164,18 @@ int ftp_put_get(int sockfd, char *para){
   strcat(filepath, "/");
   strcat(filepath, para);
 
-  printf("serverfilepath = %s\n", filepath);
+  // printf("serverfilepath = %s\n", filepath);
 
 
   if( (filefd = open(filepath, O_RDONLY)) == -1)
     return err("ftp_put_get open error\n");
 
-  printf("open file success\n");
+  // printf("open file success\n");
 
   //准备传输数据
   while( (sendsize = read(filefd, (send+4), (SENDFILESIZE-4))) > 0){
 
-    printf("sendsize = %d\n", sendsize);
+    // printf("sendsize = %d\n", sendsize);
 
     memcpy(send, &sendsize, 4);
     if( (write(sockfd, send, SENDFILESIZE)) < 0){
@@ -183,8 +185,4 @@ int ftp_put_get(int sockfd, char *para){
     memset(send, 0, sizeof(send));
   }
   return 0;
-}
-int ftp_put_quit(int sockfd){
-  printf("one people leave\n");
-  return 1;
 }
