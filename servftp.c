@@ -67,6 +67,7 @@ int ftp_put_ls(int sockfd){
 
 int ftp_put_cd(int sockfd, char *para){
   char temp[MAXLINE];
+  int flag = 0;
   if( (strcmp(para, ".")) == 0)
     return 1;
   else if( (strcmp(para, "..")) == 0){
@@ -86,8 +87,18 @@ int ftp_put_cd(int sockfd, char *para){
   }
   else{
     indeep++;
-    strcat(current_path, "/");
-    strcat(current_path, para);
+    //判断para这个文件夹存不存在
+    dp = opendir(current_path);
+    while( (entry = readdir(dp)) != NULL){
+      if( (strcmp(entry->d_name, para) == 0) && (entry->d_type & DT_DIR)){
+        flag = 1;
+        break;
+      }
+    }
+    if(flag){
+      strcat(current_path, "/");
+      strcat(current_path, para);
+    }
   }
   printf("%s\n", current_path);
 
